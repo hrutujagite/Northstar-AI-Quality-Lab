@@ -1,0 +1,3 @@
+-r requirements.txt
+Appium-Python-Client>=4.0
+selenium>=4.20

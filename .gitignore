@@ -1,0 +1,39 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+.env.local
+reports/latest-run.*
+playwright-report/
+test-results/
+*.log
+reports/*.sqlite3
+
+# Local AI evaluation configuration
+.deepeval/
+
+# Environment files
+.env.*
+!.env.example
+
+# Python environments and caches
+venv/
+__pycache__/
+.pytest_cache/
+
+# Test and coverage artifacts
+htmlcov/
+.coverage
+coverage/
+test-results/
+
+# Local databases
+*.sqlite3
+*.db
+
+# Credentials and certificates
+*.pem
+*.key
+*.p12
+*.pfx

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Northstar Connected Device Setup</title>
+  <style>
+    :root { font-family: Inter, system-ui, Segoe UI, Arial, sans-serif; color: #16243a; background: #eef3f8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px 14px; min-height: 100vh; display: grid; place-items: center; }
+    main { width: min(620px, 100%); background: #fff; border: 1px solid #d8e2ed; border-radius: 18px; padding: 25px; box-shadow: 0 16px 45px #1e355014; }
+    .eyebrow { color: #637994; font-size: .72rem; letter-spacing: .12em; font-weight: 800; text-transform: uppercase; }
+    h1 { margin: 9px 0; font-size: 1.7rem; } p { color: #627288; line-height: 1.5; }
+    button { border: 0; border-radius: 9px; padding: 10px 15px; background: #183f63; color: white; font-weight: 700; cursor: pointer; }
+    button.secondary { color: #284660; background: #edf3f8; border: 1px solid #d5e0eb; }
+    button:disabled { opacity: .55; cursor: wait; }
+    .devices { display: grid; gap: 9px; margin: 14px 0 22px; }
+    .device { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #dce5ef; border-radius: 11px; padding: 12px; }
+    .device-name { font-weight: 700; } .device-id { color: #74859a; font-size: .78rem; margin-top: 3px; }
+    label { display: block; margin: 13px 0 6px; font-weight: 700; font-size: .9rem; }
+    input { width: 100%; padding: 11px; border: 1px solid #cbd7e3; border-radius: 9px; font: inherit; }
+    #provision-form { border-top: 1px solid #e5ebf1; padding-top: 18px; }
+    #provision-status { margin-top: 15px; padding: 13px; background: #f4f7fa; border: 1px solid #e1e8f0; border-radius: 10px; min-height: 48px; line-height: 1.5; }
+    .note { color: #7a899b; font-size: .78rem; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">Northstar AI Quality Lab · Connected-device simulator</div>
+    <h1>Set up your smart device</h1>
+    <p>This prototype simulates BLE discovery/pairing and Wi-Fi provisioning. It does not use a real Bluetooth radio or store Wi-Fi passwords.</p>
+    <section>
+      <h2>1. Discover nearby devices</h2>
+      <button id="scan-devices" type="button">Scan devices</button>
+      <div id="device-list" class="devices" aria-live="polite">No scan performed yet.</div>
+    </section>
+    <form id="provision-form">
+      <h2>2. Connect to Wi-Fi</h2>
+      <label for="selected-device">Selected device ID</label>
+      <input id="selected-device" name="device_id" required placeholder="Pair a device above" readonly />
+      <label for="wifi-ssid">Wi-Fi network name (SSID)</label>
+      <input id="wifi-ssid" name="ssid" required maxlength="32" placeholder="HomeNetwork" />
+      <label for="wifi-password">Wi-Fi password (8–63 characters)</label>
+      <input id="wifi-password" name="password" required minlength="8" maxlength="63" type="password" autocomplete="off" />
+      <button id="connect-device" type="submit">Provision device</button>
+    </form>
+    <div id="provision-status" role="status" aria-live="polite" data-testid="provision-status">Waiting for device selection.</div>
+    <div class="note">Test fixtures are synthetic. Use a dummy password only; the simulator does not persist it.</div>
+  </main>
+  <script>
+    const scanButton = document.getElementById('scan-devices');
+    const deviceList = document.getElementById('device-list');
+    const selectedDevice = document.getElementById('selected-device');
+    const statusBox = document.getElementById('provision-status');
+    const form = document.getElementById('provision-form');
+    let pairedDevice = null;
+
+    scanButton.addEventListener('click', async () => {
+      scanButton.disabled = true;
+      deviceList.textContent = 'Scanning with mock BLE adapter…';
+      try {
+        const response = await fetch('/api/devices/ble/scan');
+        const data = await response.json();
+        deviceList.replaceChildren();
+        data.devices.forEach((device) => {
+          const card = document.createElement('div');
+          card.className = 'device';
+          const info = document.createElement('div');
+          const name = document.createElement('div'); name.className = 'device-name'; name.textContent = device.name;
+          const id = document.createElement('div'); id.className = 'device-id'; id.textContent = `${device.device_id} · ${device.status}`;
+          info.append(name, id);
+          const pair = document.createElement('button'); pair.type = 'button'; pair.className = 'secondary'; pair.id = `pair-${device.device_id}`; pair.textContent = 'Pair';
+          pair.addEventListener('click', async () => {
+            const paired = await fetch('/api/devices/ble/pair', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({device_id: device.device_id}) });
+            const result = await paired.json();
+            statusBox.textContent = result.message || result.detail;
+            if (paired.ok) { pairedDevice = device.device_id; selectedDevice.value = pairedDevice; }
+          });
+          card.append(info, pair); deviceList.append(card);
+        });
+      } catch (error) { deviceList.textContent = `Scan failed: ${error.message}`; }
+      finally { scanButton.disabled = false; }
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = document.getElementById('connect-device'); button.disabled = true;
+      statusBox.textContent = 'Provisioning Wi-Fi…';
+      try {
+        const response = await fetch('/api/devices/wifi/provision', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({device_id: selectedDevice.value, ssid: document.getElementById('wifi-ssid').value, password: document.getElementById('wifi-password').value})
+        });
+        const result = await response.json();
+        statusBox.textContent = result.message || result.detail;
+        statusBox.dataset.status = result.status || 'error';
+      } catch (error) { statusBox.textContent = `Provisioning failed: ${error.message}`; }
+      finally { button.disabled = false; document.getElementById('wifi-password').value = ''; }
+    });
+  </script>
+</body>
+</html>

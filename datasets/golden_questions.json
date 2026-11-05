@@ -1,0 +1,61 @@
+[
+  {
+    "id": "GQ-001",
+    "question": "What is the return window?",
+    "expected_source_id": "returns",
+    "expected_facts": [
+      "7 days",
+      "unused",
+      "original packaging"
+    ]
+  },
+  {
+    "id": "GQ-002",
+    "question": "How long does standard delivery take?",
+    "expected_source_id": "shipping",
+    "expected_facts": [
+      "3 to 5 business days"
+    ]
+  },
+  {
+    "id": "GQ-003",
+    "question": "What is the product warranty, and what is required to claim it?",
+    "expected_source_id": "warranty",
+    "expected_facts": [
+      "2-year",
+      "date of purchase",
+      "proof of purchase"
+    ]
+  },
+  {
+    "id": "GQ-004",
+    "question": "How can I contact support?",
+    "expected_source_id": "support",
+    "expected_facts": [
+      "support@example.test",
+      "Monday to Friday"
+    ]
+  },
+  {
+    "id": "GQ-005",
+    "question": "Which payment methods can I use?",
+    "expected_source_id": "payments",
+    "expected_facts": [
+      "credit",
+      "debit",
+      "UPI",
+      "net banking"
+    ]
+  },
+  {
+    "id": "GQ-006",
+    "question": "Which product categories are available?",
+    "expected_source_id": "products",
+    "expected_facts": [
+      "smart fans",
+      "mixer grinders",
+      "air purifiers",
+      "smart plugs"
+    ]
+  }
+]
